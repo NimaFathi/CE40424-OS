@@ -4,6 +4,6 @@ CE40424 is Operating systems course and here we gather our academic project
 <br>
 Nima Fathi:
 <br>
-Emad Salehi: @emadsalehi
+Emad Salehi: @gloonch
 <br>
 Sina Bolouki: @sinabolouki
