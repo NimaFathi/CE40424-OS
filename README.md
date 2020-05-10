@@ -2,8 +2,8 @@
 CE40424 is Operating systems course and here we gather our academic project 
 #Created by:
 <br>
-Nima Fathi:
+[Nima Fathi](https://github.com/Niwgoat)
 <br>
-Emad Salehi: @gloonch
+[Emad Salehi](emadsalehi)
 <br>
-Sina Bolouki: @sinabolouki
+[Sina Bolouki](https://github.com/sinabolouki)
