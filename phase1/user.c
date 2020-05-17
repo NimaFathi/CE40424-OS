@@ -27,7 +27,7 @@ int main(int argc, char const *argv[]) {
       }
       else if (strcmp(argv[i], "--pid") == 0) {
         pid = (pid_t) atoi(argv[i+1]);
-      } else {
+      } else {s
         printf("unavailable argument\n" );
         return 0;
       }
