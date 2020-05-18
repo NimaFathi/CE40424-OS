@@ -7,7 +7,17 @@
 #include <linux/fs.h>
 #include <linux/kdev_t.h>
 #include <asm/uaccess.h>
-
+#include <linux/mutex.h>
+#include <linux/device.h>
+#include <linux/uaccess.h>
+#include <linux/cdev.h>
+#include <linux/kdev_t.h>
+#include <linux/slab.h>
+#include <linux/rcupdate.h>
+#include <linux/pid.h>
+#include <linux/fs_struct.h>
+#include <linux/fdtable.h>
+#include <linux/dcache.h>
 
 
 #define MAX_LENGTH 90
@@ -24,23 +34,19 @@ MODULE_VERSION("0.1");
 
 static char Message[MAX_LENGTH];
 static char *Message_Ptr;
+static int num = 0;
 static int Device_Open = 0;
+typedef struct thisstr {
+    char userarray[20];
+}localstr;
+
+
+
 
 static dev_t pcb_dev = 0;
 static struct cdev *pcb_cdev;
 static struct class  *pcb_class;
 
-static long find_pcb(int inpid){
-  struct task_struct *tsk;
-  tsk = pid_task(find_vpid(inpid), PIDTYPE_PID);
-  if (tsk == NULL){
-    printk(KERN_INFO "process with pid %d is not running \n",inpid );
-    return -1;
-  }
-  else {
-    return tsk->state;
-  }
-}
 
 static int pcb_device_open(struct inode *inode, struct file *file)
 {
@@ -68,9 +74,77 @@ static int pcb_device_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static ssize_t pcb_device_file_read(struct file *file_ptr, char __user *user_buffer, size_t count, loff_t *position){
-    printk(KERN_NOTICE, "pcb driver: Device file is read at offset %i, read bytes count=%u", (int)*position, (unsigned int) count);
-    return (ssize_t) find_pcb(*position);
+
+static long find_pcb_state(pid_t inpid){
+  struct task_struct *tsk;
+  tsk = pid_task(find_vpid(inpid), PIDTYPE_PID);
+  if (tsk == NULL){
+    printk(KERN_INFO "process with pid %d is not running \n",inpid );
+    return -1;
+  }
+  else {
+    return tsk->state;
+  }
+}
+
+static char* state_str(int length ,long state){
+  char *mystr = (char *) kmalloc(length, GFP_KERNEL);
+  int i = 0 ;
+  while(state >0 ){
+    mystr[i] = '0' + state % 10;
+    state /= 10;
+    i ++;
+  }
+  return mystr;
+}
+
+static char* piderror(void){
+  char *error_str = (char*) kmalloc(13, GFP_KERNEL);
+  error_str = "pid not valid";
+  return error_str;
+}
+
+static int state_len(long state){
+  long temp = state;
+  int len = 0;
+  while(temp > 0){
+      len++;
+      temp /= 10;
+  }
+  return len;
+}
+
+
+static ssize_t pcb_device_file_read(struct file *file_ptr, char __user *user_buffer, size_t size , loff_t *position){
+    printk(KERN_NOTICE, "pcb driver: Device file is read at offset %i, read bytes count=%u", (int)*position, (unsigned int) size);
+    int count = *position;
+    char buf[1000];
+    pid_t pid = num;
+    long state = find_pcb_state(pid);
+    if (state == -1){
+      ssize_t i = 0;
+        char * error_str = (char *) kmalloc(13, GFP_KERNEL);
+        error_str = piderror();
+        for (i = 0; i < 13; i++) {
+          buf[i] = error_str[i];
+          count ++;
+        }
+        buf[i] = '\0';
+    }
+    else {
+    printk(KERN_ALERT "state:%ld\n", state);
+    int j =0 ;
+    int length = state_len(state); //return length of state
+    char* reveresed_state =(char *) kmalloc(length, GFP_KERNEL) ;
+    reveresed_state = state_str(length, state); // return reveresed_state string
+    for (j = 0 ; j < length ; j++){
+        buf[j] = reveresed_state[length -j -1];
+        count ++;
+    }
+    buf[j] = '\0'; //add EOF
+    }
+    copy_to_user(user_buffer, buf, ++count);
+    return count;
 }
 
 static loff_t pcb_device_lseek(struct file *file, loff_t offset, int orig)
@@ -97,12 +171,23 @@ static loff_t pcb_device_lseek(struct file *file, loff_t offset, int orig)
 }
 
 static ssize_t pcb_device_write(struct file *file, const char __user *user_buffer, size_t count, loff_t *offset){
+  unsigned long ret;
+  localstr mystr;
+  int tmp;
   int i;
-  for(i = 0 ; i < count && i < MAX_LENGTH ; i ++){
-    get_user(Message[i], user_buffer + i);
+  if (count > sizeof(mystr.userarray) - 1) // count is actual number of writtern bytes
+      return -EINVAL;
+  ret = copy_from_user(mystr.userarray, user_buffer, count);
+  if (ret)
+      return -EFAULT;
+  mystr.userarray[count] = '\0';
+  for (i = count - 1; i >= 0; i--) {
+	   num *= 10;
+	   tmp = mystr.userarray[i] - '0';
+	   num += tmp;
   }
-  Message_Ptr = Message;
-  return i;
+  printk(KERN_ALERT "pid number %d \n", num);
+  return count;
 }
 
 

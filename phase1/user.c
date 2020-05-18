@@ -5,12 +5,13 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdbool.h>
+
 static const char pcb_dev[] = "/dev/pcb";
 
 int main(int argc, char const *argv[]) {
   long read_out ;
   int sz;
-  char* buf = (char *) calloc(100, sizeof(char));
   int pid = 0;
   int period = 0;
   if (argc < 5) {
@@ -27,13 +28,11 @@ int main(int argc, char const *argv[]) {
       }
       else if (strcmp(argv[i], "--pid") == 0) {
         pid = (pid_t) atoi(argv[i+1]);
-      } else {s
+      } else {
         printf("unavailable argument\n" );
         return 0;
       }
     }
-    printf("%d\n",pid);
-      printf("%d\n", period);
   }
   int fd = open(pcb_dev, O_RDWR );
   if (fd < 0) {
@@ -44,19 +43,20 @@ int main(int argc, char const *argv[]) {
   int length = snprintf(NULL, 0 , "%d", pid);
   char * str = malloc(length + 1);
   snprintf(str, length + 1 , "%d", pid);
-  printf("%s\n",str );
 
   // write pid into driver file (working)
   lseek(fd, 0, SEEK_SET);
   sz = write(fd, str,strlen(str));
-  printf("%d\n",sz);
-  free(str);
-  close(fd);
-  // BUG: read from driver(not working) -> there must be a bug in "pcb_device_file_read" function
-  fd = open(pcb_dev, O_RDWR );
-  read_out = read(fd , buf,10);
-  printf("%ld\n", read_out); //print number of read bytes
-  buf[read_out] = '\0';
-  printf("%s\n", buf ); // print desired output
+  printf("# written bytes in driver: %d\n",sz);
+  while(1){
+    char buffer[1000];
+    sleep(period);
+    lseek(fd, strlen(buffer) + sz , SEEK_SET);
+    read_out = read(fd , buffer,1000);
+    printf("# read bytes: %ld\n", read_out); //print number of read bytes
+    buffer[read_out] = '\0';
+    printf("%s\n", buffer);
+  }
+
   return 0;
 }
