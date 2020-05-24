@@ -104,16 +104,15 @@ static int integer_len(long state){
 
 static ssize_t pcb_device_file_read(struct file *file, char *buffer, size_t size, loff_t *offset){
     int count = *offset;
-    char buf[20000];
+    char buf[1500];
     pid_t pid = num;
     struct task_struct *tsk;
     tsk = pid_task(find_vpid(pid), PIDTYPE_PID);
-    int state = tsk->state;
-    unsigned long nvcsw = tsk->nvcsw;
-    unsigned long nivcsw = tsk->nivcsw;
+    long state = tsk->state;
     int index = 0;
     if (state == -1){
       char * mst = (char *) kmalloc(13, GFP_KERNEL);
+      mst = piderror();
       for(int i = 0 ; i < 13; i ++){
           buf[index] = mst[i];
           index ++;
@@ -132,27 +131,36 @@ static ssize_t pcb_device_file_read(struct file *file, char *buffer, size_t size
     buf[index] = '-';
     index ++;
     count ++;
-    kfree(reverseState);
+    long nvcsw = tsk->nvcsw;
     length = integer_len(nvcsw);
     char* reversenvcsw = (char *) kmalloc(length, GFP_KERNEL);
     reversenvcsw = integer_str(length, nvcsw);
     for(int i = 0 ; i < length ; i++) {
-      buf[index] = reverseState[length - i - 1];
+      buf[index] = reversenvcsw[length - i - 1];
       index++;
       count++;
     }
     buf[index] = '-';
     index ++;
     count ++;
-    kfree(reversenvcsw);
+
+    long nivcsw = tsk->nivcsw;
     length = integer_len(nivcsw);
     char* reversenivscw = (char*) kmalloc(length, GFP_KERNEL);
     reversenivscw = integer_str(length, nivcsw);
+    for(int i = 0 ; i < length ; i++) {
+      buf[index] = reversenivscw[length - i - 1];
+      index++;
+      count++;
+    }
     buf[index] = '\n';
     index ++;
     count ++;
-    kfree(reversenivscw);
 
+    kfree(reversenvcsw);
+    kfree(reverseState);
+    kfree(reversenivscw);
+    /*
     struct files_struct *current_files;
     struct fdtable *files_table;
     unsigned int *fds;
@@ -182,9 +190,9 @@ static ssize_t pcb_device_file_read(struct file *file, char *buffer, size_t size
     buf[index] = '\0';
     index++;
     count++;
-    kfree(buffer_2);
+    kfree(buffer_2);*/
   }
-    copy_to_user(buffer, buf, index);
+    copy_to_user(buffer, buf, count+10);
     return count;
 }
 
