@@ -10,7 +10,6 @@
 #include <linux/mutex.h>
 #include <linux/device.h>
 #include <linux/uaccess.h>
-#include <linux/cdev.h>
 #include <linux/kdev_t.h>
 #include <linux/slab.h>
 #include <linux/rcupdate.h>
@@ -19,13 +18,9 @@
 #include <linux/fdtable.h>
 #include <linux/dcache.h>
 
-
-#define MAX_LENGTH 90
+#define MAX_LENGTH 900
 #define DEV_NAME "pcb"
 
-//TODO
-//must implement read function to read from file and call find_pcb function and return its value
-// Not sure but maybe we use .ioctl too
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Nima Fathi");
@@ -75,24 +70,13 @@ static int pcb_device_release(struct inode *inode, struct file *file)
 }
 
 
-static long find_pcb_state(pid_t inpid){
-  struct task_struct *tsk;
-  tsk = pid_task(find_vpid(inpid), PIDTYPE_PID);
-  if (tsk == NULL){
-    printk(KERN_INFO "process with pid %d is not running \n",inpid );
-    return -1;
-  }
-  else {
-    return tsk->state;
-  }
-}
 
-static char* state_str(int length ,long state){
+static char* integer_str(int length ,long myint){
   char *mystr = (char *) kmalloc(length, GFP_KERNEL);
   int i = 0 ;
-  while(state >0 ){
-    mystr[i] = '0' + state % 10;
-    state /= 10;
+  while(myint >0 ){
+    mystr[i] = '0' + myint % 10;
+    myint /= 10;
     i ++;
   }
   return mystr;
@@ -104,7 +88,7 @@ static char* piderror(void){
   return error_str;
 }
 
-static int state_len(long state){
+static int integer_len(long state){
   long temp = state;
   int len = 0;
   while(temp > 0){
@@ -115,35 +99,91 @@ static int state_len(long state){
 }
 
 
-static ssize_t pcb_device_file_read(struct file *file_ptr, char __user *user_buffer, size_t size , loff_t *position){
-    printk(KERN_NOTICE, "pcb driver: Device file is read at offset %i, read bytes count=%u", (int)*position, (unsigned int) size);
-    int count = *position;
-    char buf[1000];
+
+
+
+static ssize_t pcb_device_file_read(struct file *file, char *buffer, size_t size, loff_t *offset){
+    int count = *offset;
+    char buf[20000];
     pid_t pid = num;
-    long state = find_pcb_state(pid);
+    struct task_struct *tsk;
+    tsk = pid_task(find_vpid(pid), PIDTYPE_PID);
+    int state = tsk->state;
+    unsigned long nvcsw = tsk->nvcsw;
+    unsigned long nivcsw = tsk->nivcsw;
+    int index = 0;
     if (state == -1){
-      ssize_t i = 0;
-        char * error_str = (char *) kmalloc(13, GFP_KERNEL);
-        error_str = piderror();
-        for (i = 0; i < 13; i++) {
-          buf[i] = error_str[i];
+      char * mst = (char *) kmalloc(13, GFP_KERNEL);
+      for(int i = 0 ; i < 13; i ++){
+          buff[index] = mst[i];
+          index ++;
           count ++;
+      }
+    }
+    else{
+    int length = integer_len(state);
+    char* reverseState = (char *) kmalloc(length, GFP_KERNEL);
+    reverseState = integer_str(length, state);
+    while (int i = 0 ; i < length ; i++) {
+      buf[index] = reverseState[length - i - 1];
+      index++;
+      count++;
+    }
+    buf[index] = '-';
+    index ++
+    count ++
+    kfree(reverseState);
+    length = integer_len(nvcsw);
+    char* reversenvcsw = (char *) kmalloc(length, GFP_KERNEL);
+    reversenvcsw = integer_str(length, nvcsw);
+    while (int i = 0 ; i < length ; i++) {
+      buf[index] = reverseState[length - i - 1];
+      index++;
+      count++;
+    }
+    buf[index] = '-';
+    index ++
+    count ++
+    kfree(reversenvcsw);
+    length = integer_len(nivcsw);
+    char* reversenivscw = (char*) kmalloc(length, GFP_KERNEL);
+    reversenivscw = integer_str(length, nivcsw);
+    buf[index] = '\n';
+    index ++
+    count ++
+    kfree(reversenivscw);
+
+    struct files_struct *current_files;
+    struct fdtable *files_table;
+    unsigned int *fds;
+    int j = 0;
+    struct path files_path;
+    char *cwd;
+    char *buffer_2 = (char *) kmalloc(100 * sizeof(char), GFP_KERNEL);
+    current_files = tsk->files;
+    files_table = files_fdtable(current_files);
+    size_t counter;
+    while (files_table->fd[j] != NULL) {
+        files_path = files_table->fd[j]->f_path;
+        cwd = d_path(&files_path, buffer_2, 100 * sizeof(char));
+        counter = 0;
+
+        while (cwd[i1] != '\0') {
+            buf[index] = cwd[counter];
+            counter++;
+            index++;
+            count++;
         }
-        buf[i] = '\0';
+    	buf[index] = '\n';
+    	index++;
+      j++;
+      count++;
     }
-    else {
-    printk(KERN_ALERT "state:%ld\n", state);
-    int j =0 ;
-    int length = state_len(state); //return length of state
-    char* reveresed_state =(char *) kmalloc(length, GFP_KERNEL) ;
-    reveresed_state = state_str(length, state); // return reveresed_state string
-    for (j = 0 ; j < length ; j++){
-        buf[j] = reveresed_state[length -j -1];
-        count ++;
-    }
-    buf[j] = '\0'; //add EOF
-    }
-    copy_to_user(user_buffer, buf, ++count);
+    buf[index] = '\0';
+    index++;
+    count++;
+  }
+    copy_to_user(buffer, buf, index);
     return count;
 }
 
@@ -169,7 +209,6 @@ static loff_t pcb_device_lseek(struct file *file, loff_t offset, int orig)
     file->f_pos = new_pos;  // This is what we'll use now
     return new_pos;
 }
-
 static ssize_t pcb_device_write(struct file *file, const char __user *user_buffer, size_t count, loff_t *offset){
   unsigned long ret;
   localstr mystr;
