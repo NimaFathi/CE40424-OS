@@ -115,7 +115,7 @@ static ssize_t pcb_device_file_read(struct file *file, char *buffer, size_t size
     if (state == -1){
       char * mst = (char *) kmalloc(13, GFP_KERNEL);
       for(int i = 0 ; i < 13; i ++){
-          buff[index] = mst[i];
+          buf[index] = mst[i];
           index ++;
           count ++;
       }
@@ -124,33 +124,33 @@ static ssize_t pcb_device_file_read(struct file *file, char *buffer, size_t size
     int length = integer_len(state);
     char* reverseState = (char *) kmalloc(length, GFP_KERNEL);
     reverseState = integer_str(length, state);
-    while (int i = 0 ; i < length ; i++) {
+    for(int i = 0 ; i < length ; i++) {
       buf[index] = reverseState[length - i - 1];
       index++;
       count++;
     }
     buf[index] = '-';
-    index ++
-    count ++
+    index ++;
+    count ++;
     kfree(reverseState);
     length = integer_len(nvcsw);
     char* reversenvcsw = (char *) kmalloc(length, GFP_KERNEL);
     reversenvcsw = integer_str(length, nvcsw);
-    while (int i = 0 ; i < length ; i++) {
+    for(int i = 0 ; i < length ; i++) {
       buf[index] = reverseState[length - i - 1];
       index++;
       count++;
     }
     buf[index] = '-';
-    index ++
-    count ++
+    index ++;
+    count ++;
     kfree(reversenvcsw);
     length = integer_len(nivcsw);
     char* reversenivscw = (char*) kmalloc(length, GFP_KERNEL);
     reversenivscw = integer_str(length, nivcsw);
     buf[index] = '\n';
-    index ++
-    count ++
+    index ++;
+    count ++;
     kfree(reversenivscw);
 
     struct files_struct *current_files;
@@ -168,7 +168,7 @@ static ssize_t pcb_device_file_read(struct file *file, char *buffer, size_t size
         cwd = d_path(&files_path, buffer_2, 100 * sizeof(char));
         counter = 0;
 
-        while (cwd[i1] != '\0') {
+        while (cwd[counter] != '\0') {
             buf[index] = cwd[counter];
             counter++;
             index++;
@@ -182,6 +182,7 @@ static ssize_t pcb_device_file_read(struct file *file, char *buffer, size_t size
     buf[index] = '\0';
     index++;
     count++;
+    kfree(buffer_2);
   }
     copy_to_user(buffer, buf, index);
     return count;
