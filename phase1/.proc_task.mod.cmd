@@ -1,0 +1,1 @@
+cmd_/home/sinabolouki/Documents/os_pr1/CE40424-OS/phase1/proc_task.mod := { echo  /home/sinabolouki/Documents/os_pr1/CE40424-OS/phase1/proc_task.o; echo; } > /home/sinabolouki/Documents/os_pr1/CE40424-OS/phase1/proc_task.mod

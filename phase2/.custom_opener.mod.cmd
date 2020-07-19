@@ -1,0 +1,1 @@
+cmd_/home/sinabolouki/Documents/os_pr1/CE40424-OS/phase2/custom_opener.mod := { echo  /home/sinabolouki/Documents/os_pr1/CE40424-OS/phase2/custom_opener.o; echo; } > /home/sinabolouki/Documents/os_pr1/CE40424-OS/phase2/custom_opener.mod

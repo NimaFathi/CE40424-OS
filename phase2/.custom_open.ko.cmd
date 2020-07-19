@@ -1,0 +1,1 @@
+cmd_/home/sinabolouki/Documents/os_pr1/CE40424-OS/phase2/custom_open.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000 -T ./scripts/module-common.lds --build-id  -o /home/sinabolouki/Documents/os_pr1/CE40424-OS/phase2/custom_open.ko /home/sinabolouki/Documents/os_pr1/CE40424-OS/phase2/custom_open.o /home/sinabolouki/Documents/os_pr1/CE40424-OS/phase2/custom_open.mod.o ;  true
