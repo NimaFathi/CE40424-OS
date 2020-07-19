@@ -905,6 +905,17 @@ deps_/home/sinabolouki/Documents/os_pr1/CE40424-OS/phase2/custom_opener.o := \
     $(wildcard include/config/balloon/compaction.h) \
   arch/x86/include/asm/sections.h \
   include/asm-generic/sections.h \
+  include/linux/cred.h \
+    $(wildcard include/config/debug/credentials.h) \
+  include/linux/key.h \
+    $(wildcard include/config/net.h) \
+  include/linux/assoc_array.h \
+    $(wildcard include/config/associative/array.h) \
+  include/linux/sched/user.h \
+    $(wildcard include/config/fanotify.h) \
+    $(wildcard include/config/posix/mqueue.h) \
+    $(wildcard include/config/bpf/syscall.h) \
+  include/linux/ratelimit.h \
 
 /home/sinabolouki/Documents/os_pr1/CE40424-OS/phase2/custom_opener.o: $(deps_/home/sinabolouki/Documents/os_pr1/CE40424-OS/phase2/custom_opener.o)
 

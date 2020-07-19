@@ -1,4 +1,5 @@
 CONFIG_MODULE_SIG = n
+CONFIG_MODULE_SIG_ALL=n
 TARGET_MODULE := custom_opener
 
 obj-m := $(TARGET_MODULE).o
