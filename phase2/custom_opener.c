@@ -27,7 +27,9 @@ MODULE_LICENSE("GPL");
 
 int checkFile(char *filename) {
     int i;
-
+    if (filenames == NULL) {
+        return 0;
+    }
     for (i = 0 ; filenames[i][0] != '\0' ; i++) {
         if(strcmp(filenames[i], filename ) == 0 ) {
             return filePrios[i];
@@ -38,6 +40,9 @@ int checkFile(char *filename) {
 
 int checkUser(int userId) {
     int i;
+    if (userIds == NULL) {
+        return 0;
+    }
     for (i = 0 ; userIds[i] < 60000; i++) {
          if (userIds[i] == userId) {
              return userPrios[i];
