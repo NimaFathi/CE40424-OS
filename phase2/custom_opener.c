@@ -13,13 +13,16 @@
 #include <linux/device.h>
 #include <linux/cdev.h>
 
+#define MODULE
+#define LINUX
+#define __KERNEL__
+#define GFP_KERNEL      (__GFP_RECLAIM | __GFP_IO | __GFP_FS)
 
 #define DEV_NAME "custom_open"
 
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Sina Bolouki, Emad Salehi, Nima Fathi");
-MODULE_DESCRIPTION("PCB");
-MODULE_VERSION("0.1");
+MODULE_LICENSE("Dual MIT/GPL");
+MODULE_AUTHOR("Sina Bolouki");
+MODULE_DESCRIPTION("Custom");
 
 static dev_t open_device;
 static struct class *open_class;
@@ -83,8 +86,8 @@ static asmlinkage long custom_open(const char __user *filename, int flags, umode
       int fileP = checkFile(filename);
       int userP = checkUser(get_current_user() -> uid.val);
       int newFlag = flags;
-      printk(KERN_ALERT "Custom open invoked");
-      printk(KERN_ALERT "user_id %d" , get_current_user() ->uid.val);
+      printk(KERN_INFO "Custom open invoked\n");
+      printk(KERN_INFO "user_id %d, filename %s\n" , get_current_user() ->uid.val, filename);
       if (fileP == 0) {
         return old_open(filename, flags, mode);
       }
@@ -143,7 +146,7 @@ static ssize_t device_write(struct file * filename, const char * buf, size_t cou
     int i=0;
     int j=0;
     int k;
-
+    printk("%s", writer);
     for (i = 0; i<sizeof(writer); i++) {
         k = 0;
         while(writer[i] != ',') {
@@ -182,10 +185,7 @@ static ssize_t device_write(struct file * filename, const char * buf, size_t cou
     for (i; i < fileNum ; i ++) {
         printk(KERN_INFO "file name %s, file access %d \n", fileNames[i], fileAccs[i]);
     }
-    sys_call_table = (void *)kallsyms_lookup_name("sys_call_table");
     printk(KERN_INFO "sys_call_table address: %p\n", sys_call_table);
-
-    old_open = sys_call_table[__NR_open];
     disable_write_protection();
     sys_call_table[__NR_open] = custom_open;
     enable_write_protection();
@@ -205,6 +205,9 @@ static int open_init(void)
 {
     int result = 0;
     result = alloc_chrdev_region(&open_device, 0, 1, DEV_NAME);
+    sys_call_table = (void *)kallsyms_lookup_name("sys_call_table");
+    old_open = sys_call_table[__NR_open];
+    
     if (result < 0){
       printk("faild to register pcb character device with error code:%i", result);
     }
@@ -240,6 +243,7 @@ static int open_init(void)
       unregister_chrdev_region(open_device,1);
       return result;
     }
+    printk(KERN_INFO "in init \n");
     return result;
 }
 
