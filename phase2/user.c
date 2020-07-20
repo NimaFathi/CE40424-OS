@@ -32,6 +32,7 @@ int main(int argc, char const *argv[]) {
         }
         if (!is_first) {
             strcpy(full_str, argv[i]);
+            is_first = true;
         } else {
             strcat(full_str, argv[i]);
         }
