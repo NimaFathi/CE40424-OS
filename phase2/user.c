@@ -10,14 +10,14 @@
 static const char pcb_dev[] = "/dev/custom_open";
 
 int main(int argc, char const *argv[]) {
-    long read_out ;
     int sz;
-    bool is_reading_files = true;
+    bool is_reading_files = true, is_first = false;
     int fd = open(pcb_dev, O_RDWR);
     if (fd < 0) {
-        perror("faild to open character device\n");
+        perror("failed to open character device\n");
         exit(1);
     }
+    char full_str[800];
     lseek(fd, 0, SEEK_SET);
     int i = 1;
     for (i = 1; i < argc ; i += 1) {
@@ -27,20 +27,20 @@ int main(int argc, char const *argv[]) {
         }
         else if (strcmp(argv[i], "--users") == 0) {
             is_reading_files = false;
-            sz = write(fd, ".", 1);
-            lseek(fd, sz, SEEK_CUR);
+            strcat(full_str, ".");
             continue;
         }
-        sz = write(fd, argv[i],strlen(argv[i]));
-        lseek(fd, sz, SEEK_CUR);
-        sz = write(fd, ",", 1);
-        lseek(fd, sz, SEEK_CUR);
+        if (!is_first) {
+            strcpy(full_str, argv[i]);
+        } else {
+            strcat(full_str, argv[i]);
+        }
+        strcat(full_str, ",");
         i++;
-        sz = write(fd, argv[i], strlen(argv[i]));
-        lseek(fd, sz, SEEK_CUR);
+        strcat(full_str, argv[i]);
     }
-    sz = write(fd, ".", 1);
-    lseek(fd, sz, SEEK_CUR);
+    strcat(full_str, ".");
+    sz = write(fd, full_str, strlen(full_str));
     close(fd);
 
     return 0;
