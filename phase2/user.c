@@ -39,6 +39,8 @@ int main(int argc, char const *argv[]) {
         sz = write(fd, argv[i], strlen(argv[i]));
         lseek(fd, sz, SEEK_CUR);
     }
+    sz = write(fd, ".", 1);
+    lseek(fd, sz, SEEK_CUR);
     close(fd);
 
     return 0;
